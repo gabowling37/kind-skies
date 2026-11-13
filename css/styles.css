@@ -61,8 +61,8 @@ form.search button { background: var(--accent); color: #fff; padding: 6px 14px; 
 .units.c::before { transform: translateX(44px); }
 .units button { position: relative; z-index: 1; width: 44px; height: 100%; padding: 0; line-height: 1; white-space: nowrap; background: transparent; color: var(--ink-soft); transition: color .25s; }
 .units button[aria-pressed="true"] { color: var(--ink); }
-.temp, .hour .v, .day .lo, .day .hi, .hilo, .facts b { transition: opacity .2s; }
-.swapping .temp, .swapping .hour .v, .swapping .day .lo, .swapping .day .hi, .swapping .hilo, .swapping .facts b { opacity: 0; }
+.temp, .hour .v, .hour .w, .hour .g, .day .lo, .day .hi, .hilo, .facts b { transition: opacity .2s; }
+.swapping .temp, .swapping .hour .v, .swapping .hour .w, .swapping .hour .g, .swapping .day .lo, .swapping .day .hi, .swapping .hilo, .swapping .facts b { opacity: 0; }
 form.search button { white-space: nowrap; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 form.search:focus-within { border-color: var(--accent); }
@@ -112,6 +112,9 @@ section h2 { font-family: var(--font-display); font-weight: 500; font-size: 18px
 .hour svg { width: 30px; height: 30px; }
 .hour .v { font-weight: 700; font-variant-numeric: tabular-nums; }
 .hour .p { font-size: 11px; color: var(--rain); font-weight: 700; min-height: 16px; }
+.hour .w { display: flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.hour .w svg.arrow { width: 11px; height: 11px; flex: none; color: var(--ink-soft); }
+.hour .g { font-size: 10px; color: var(--ink-soft); white-space: nowrap; font-variant-numeric: tabular-nums; margin-top: -3px; }
 
 .days { display: grid; gap: 2px; }
 .day { display: grid; grid-template-columns: 72px 34px 40px 1fr 40px 46px; align-items: center; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--line); }
@@ -144,6 +147,10 @@ section h2 { font-family: var(--font-display); font-weight: 500; font-size: 18px
 footer { font-size: 12px; color: var(--ink-soft); text-align: center; }
 footer a { color: inherit; }
 .loading { opacity: .55; transition: opacity .3s; }
+/* Before the first forecast arrives: only the header and a "Finding your forecast…" line show. */
+.wrap.booting { opacity: 1; }
+.booting .sky .when, .booting .now, .booting .message, .booting .facts,
+.booting > section, .booting > footer { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 /* ---- Radar map ---- */
 .radar { display: grid; gap: 0; padding: 0; overflow: hidden; }

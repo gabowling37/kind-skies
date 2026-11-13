@@ -8,7 +8,11 @@ try { const u = localStorage.getItem('ks-unit'); if (u === 'C' || u === 'F') sta
 
 const toUnit = c => state.unit === 'F' ? c * 9 / 5 + 32 : c;
 const deg = c => Math.round(toUnit(c)) + '°';
-const wind = kmh => state.unit === 'F' ? Math.round(kmh * 0.621) + ' mph' : Math.round(kmh) + ' km/h';
+const windNum = kmh => Math.round(state.unit === 'F' ? kmh * 0.621 : kmh);
+const wind = kmh => windNum(kmh) + (state.unit === 'F' ? ' mph' : ' km/h');
+// Wind direction is where the wind comes FROM; the arrow points where it's blowing TO.
+const COMPASS = ['north', 'northeast', 'east', 'southeast', 'south', 'southwest', 'west', 'northwest'];
+const windArrow = from => `<svg class="arrow" viewBox="0 0 12 12" role="img" aria-label="Wind from the ${COMPASS[Math.round(from / 45) % 8]}" style="transform:rotate(${from + 180}deg)"><path d="M6 1l3.5 9L6 8 2.5 10z" fill="currentColor"/></svg>`;
 const hourLabel = d => d.toLocaleTimeString([], { hour: 'numeric' }).replace(':00', '');
 const dayLabel = (d, i) => i === 0 ? 'Today' : d.toLocaleDateString([], { weekday: 'short' });
 
@@ -76,12 +80,12 @@ async function geocode(name) {
 async function forecast(place) {
   const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + place.lat + '&longitude=' + place.lon +
     '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day' +
-    '&hourly=temperature_2m,weather_code,precipitation_probability,is_day' +
+    '&hourly=temperature_2m,weather_code,precipitation_probability,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m' +
     '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset' +
     '&forecast_days=11&timezone=auto';
   const j = await (await fetch(url)).json();
   // Reshape the API's column-style arrays into friendly lists of objects.
-  const hourly = j.hourly.time.map((t, i) => ({ time: new Date(t), temp: j.hourly.temperature_2m[i], code: j.hourly.weather_code[i], pop: j.hourly.precipitation_probability[i], isDay: j.hourly.is_day[i] }));
+  const hourly = j.hourly.time.map((t, i) => ({ time: new Date(t), temp: j.hourly.temperature_2m[i], code: j.hourly.weather_code[i], pop: j.hourly.precipitation_probability[i], isDay: j.hourly.is_day[i], wind: j.hourly.wind_speed_10m?.[i], gust: j.hourly.wind_gusts_10m?.[i], windDir: j.hourly.wind_direction_10m?.[i] }));
   const nowIdx = Math.max(0, hourly.findIndex(h => h.time > new Date(j.current.time)) - 1);
   return {
     place: place.name, lat: place.lat, lon: place.lon, cc: place.cc,
@@ -98,7 +102,9 @@ function sampleData() {
   const hourly = Array.from({ length: 24 }, (_, i) => {
     const t = new Date(now.getTime() + i * 3600e3), h = t.getHours();
     const temp = 12 + 6 * Math.cos((h - 15) / 24 * 2 * Math.PI);
-    return { time: t, temp, code: i > 18 ? 61 : codeAt(h), pop: i > 16 ? 35 + (i - 16) * 6 : 5, isDay: h >= 8 && h < 19 ? 1 : 0 };
+    const windKmh = 9 + 7 * Math.sin((h - 9) / 24 * 2 * Math.PI) + (i > 16 ? 6 : 0);
+    return { time: t, temp, code: i > 18 ? 61 : codeAt(h), pop: i > 16 ? 35 + (i - 16) * 6 : 5, isDay: h >= 8 && h < 19 ? 1 : 0,
+      wind: windKmh, gust: windKmh * 1.6, windDir: (200 + i * 3) % 360 };
   });
   const days = [[1, 18, 7, 10], [61, 15, 9, 70], [3, 13, 6, 20], [0, 16, 4, 0], [2, 17, 6, 10], [1, 19, 8, 5], [80, 14, 8, 60], [3, 12, 5, 25], [0, 13, 3, 0], [2, 15, 5, 10]];
   const daily = days.map(([code, max, min, pop], i) => {
@@ -123,8 +129,7 @@ function render() {
   globe.update(d.lat, d.lon);
   radar.show(d.lat, d.lon, d.cc);
   const alertKey = [d.lat, d.lon, state.live].join();
-  if (state.pending) { $('alerts-list').textContent = 'Checking for official alerts…'; }
-  else if (alertKey !== render.alertKey) { render.alertKey = alertKey; alerts.show(d.lat, d.lon, d.cc, d.place, state.live); }
+  if (alertKey !== render.alertKey) { render.alertKey = alertKey; alerts.show(d.lat, d.lon, d.cc, d.place, state.live); }
   $('sky').className = 'sky ' + info.sky;
   $('place').textContent = d.place;
   $('when').textContent = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
@@ -149,6 +154,8 @@ function render() {
       ${icon(h.code, h.isDay)}
       <div class="v">${deg(h.temp)}</div>
       <div class="p">${h.pop >= 20 ? h.pop + '%' : ''}</div>
+      ${h.wind == null ? '' : `<div class="w">${h.windDir == null ? '' : windArrow(h.windDir)}${wind(h.wind)}</div>`}
+      ${h.gust == null ? '' : `<div class="g">gusts ${windNum(h.gust)}</div>`}
     </div>`).join('');
 
   // Range bars all share one scale: the week's coldest low to warmest high.
@@ -190,9 +197,10 @@ async function load(cityName) {
       showNotice('Live weather can’t load in this preview. Open the HTML file in your browser to see real forecasts for any city.', 'Showing a sample forecast.');
     }
   }
-  state.pending = false;
+  // Nothing to show yet (say, the very first city wasn't found): fall back to the sample.
+  if (!state.data) { state.data = sampleData(); state.live = false; }
   render();
-  document.querySelector('.wrap').classList.remove('loading');
+  document.querySelector('.wrap').classList.remove('loading', 'booting');
 }
 
 // ---------- Hourly strip: mouse wheel and drag scroll it sideways ----------
@@ -235,10 +243,9 @@ $('search-form').addEventListener('submit', e => {
 
 // ---------- Start ----------
 // Runs once every script file (globe.js, radar.js, alerts.js) has loaded.
-// Show sample data right away, then try for live data.
+// The page starts in a quiet "booting" state (see index.html) until the first forecast is ready.
 document.addEventListener('DOMContentLoaded', () => {
   setUnit(state.unit);
-  state.data = sampleData(); state.pending = true; render();
   let startCity = 'Lexington, Kentucky';
   try { startCity = localStorage.getItem('ks-city') || startCity; } catch (e) {}
   load(startCity);
