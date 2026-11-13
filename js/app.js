@@ -164,7 +164,14 @@ function render() {
     </div>`).join('');
 }
 
-function showNotice(html) { $('notice').innerHTML = html; $('notice').hidden = !html; }
+// Notices are built as text, never HTML, since they can include what someone typed.
+function showNotice(text, lead) {
+  const n = $('notice');
+  n.replaceChildren();
+  if (lead) { const s = document.createElement('strong'); s.textContent = lead; n.append(s, ' '); }
+  n.append(text || '');
+  n.hidden = !text && !lead;
+}
 
 async function load(cityName) {
   document.querySelector('.wrap').classList.add('loading');
@@ -180,7 +187,7 @@ async function load(cityName) {
     } else {
       state.live = false;
       if (!state.data) state.data = sampleData();
-      showNotice('<strong>Showing a sample forecast.</strong> Live weather can’t load in this preview. Open the HTML file in your browser to see real forecasts for any city.');
+      showNotice('Live weather can’t load in this preview. Open the HTML file in your browser to see real forecasts for any city.', 'Showing a sample forecast.');
     }
   }
   state.pending = false;
