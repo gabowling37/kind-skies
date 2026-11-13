@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kind Skies</title>
+<meta name="description" content="A gentle weather app with current conditions, hourly and ten-day forecasts, radar, and calm, clear weather alerts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap">
+<!-- Map library styles, from their official packages -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<!-- Our styles come last so they can adjust the libraries' looks -->
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand" aria-label="Kind Skies">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="13" cy="13" r="7" fill="var(--bar-warm)"/><path d="M10 25h13a5 5 0 0 0 0-10 7 7 0 0 0-13 2 4 4 0 0 0 0 8z" fill="var(--surface)" stroke="var(--ink-soft)" stroke-width="1.5"/></svg>
+      Kind Skies
+    </div>
+    <div class="controls">
+      <form class="search" id="search-form">
+        <label for="city" hidden>City</label>
+        <input id="city" name="city" placeholder="Look up a city" autocomplete="off">
+        <button type="submit">Go</button>
+      </form>
+      <div class="units" id="units" role="group" aria-label="Temperature units">
+        <button id="unit-f" type="button" aria-pressed="true">°F</button>
+        <button id="unit-c" type="button" aria-pressed="false">°C</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="notice" id="notice" hidden></div>
+
+  <article class="sky clear" id="sky" aria-live="polite">
+    <div class="sky-top">
+      <div><div class="place" id="place">Sample town</div><div class="when" id="when"></div></div>
+    </div>
+    <div class="now">
+      <div class="big-icon" id="big-icon"></div>
+      <div>
+        <div class="temp" id="temp">--°</div>
+        <div class="cond" id="cond"></div>
+        <div class="hilo" id="hilo"></div>
+      </div>
+    </div>
+    <p class="message" id="message"></p>
+    <div class="facts" id="facts"></div>
+  </article>
+
+  <section class="alerts" id="alerts" aria-live="polite">
+    <div class="alerts-head"><h2>Weather alerts</h2><span class="alerts-checked" id="alerts-checked"></span></div>
+    <div id="alerts-list" class="alerts"></div>
+  </section>
+
+  <section class="panel tip" id="tip"></section>
+
+  <section>
+    <h2>The next 24 hours</h2>
+    <div class="panel"><div class="hours-wrap"><div class="hours" id="hours" tabindex="0" aria-label="Hourly forecast, scroll sideways for more"></div></div></div>
+  </section>
+
+  <section>
+    <h2>The next ten days</h2>
+    <div class="panel"><div class="days" id="days"></div></div>
+  </section>
+
+  <section>
+    <h2>Rain nearby</h2>
+    <div class="panel radar">
+      <div class="radar-stage">
+        <div id="radar-map" aria-label="Radar map around your city"></div>
+        <div class="radar-msg" id="radar-msg" hidden><p id="radar-msg-text"></p></div>
+      </div>
+      <div class="radar-bar">
+        <button class="radar-play" id="radar-play" type="button" aria-label="Play radar loop"></button>
+        <input class="radar-time" id="radar-time" type="range" min="0" max="10" value="10" aria-label="Radar time">
+        <div class="radar-when" id="radar-when"></div>
+        <div class="radar-legend"><span>Light</span><i id="radar-legend"></i><span>Heavy</span></div>
+      </div>
+      <div class="radar-credit" id="radar-credit"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your place under the sun and moon</h2>
+    <div class="sky-view">
+      <div class="globe-stage" id="globe-stage">
+        <button class="recenter" id="recenter" type="button">Back to my spot</button>
+        <div class="globe-hint">Drag to turn the globe</div>
+      </div>
+      <div class="sky-facts" id="sky-facts"></div>
+    </div>
+  </section>
+
+  <footer>Forecasts from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Be gentle with yourself out there.</footer>
+</div>
+
+<!-- Libraries: maps (Leaflet + MapLibre) and 3D (Three.js) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.1.3/leaflet-maplibre-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- Kind Skies, in order: app.js first, since the others use its helpers -->
+<script src="js/app.js"></script>
+<script src="js/globe.js"></script>
+<script src="js/radar.js"></script>
+<script src="js/alerts.js"></script>
+</body>
+</html>
