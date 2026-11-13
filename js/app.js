@@ -85,7 +85,7 @@ async function forecast(place) {
     '&forecast_days=11&timezone=auto';
   const j = await (await fetch(url)).json();
   // Reshape the API's column-style arrays into friendly lists of objects.
-  const hourly = j.hourly.time.map((t, i) => ({ time: new Date(t), temp: j.hourly.temperature_2m[i], code: j.hourly.weather_code[i], pop: j.hourly.precipitation_probability[i], isDay: j.hourly.is_day[i], wind: j.hourly.wind_speed_10m[i], gust: j.hourly.wind_gusts_10m[i], windDir: j.hourly.wind_direction_10m[i] }));
+  const hourly = j.hourly.time.map((t, i) => ({ time: new Date(t), temp: j.hourly.temperature_2m[i], code: j.hourly.weather_code[i], pop: j.hourly.precipitation_probability[i], isDay: j.hourly.is_day[i], wind: j.hourly.wind_speed_10m?.[i], gust: j.hourly.wind_gusts_10m?.[i], windDir: j.hourly.wind_direction_10m?.[i] }));
   const nowIdx = Math.max(0, hourly.findIndex(h => h.time > new Date(j.current.time)) - 1);
   return {
     place: place.name, lat: place.lat, lon: place.lon, cc: place.cc,
