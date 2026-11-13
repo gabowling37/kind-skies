@@ -123,8 +123,7 @@ function render() {
   globe.update(d.lat, d.lon);
   radar.show(d.lat, d.lon, d.cc);
   const alertKey = [d.lat, d.lon, state.live].join();
-  if (state.pending) { $('alerts-list').textContent = 'Checking for official alerts…'; }
-  else if (alertKey !== render.alertKey) { render.alertKey = alertKey; alerts.show(d.lat, d.lon, d.cc, d.place, state.live); }
+  if (alertKey !== render.alertKey) { render.alertKey = alertKey; alerts.show(d.lat, d.lon, d.cc, d.place, state.live); }
   $('sky').className = 'sky ' + info.sky;
   $('place').textContent = d.place;
   $('when').textContent = new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
@@ -190,9 +189,10 @@ async function load(cityName) {
       showNotice('Live weather can’t load in this preview. Open the HTML file in your browser to see real forecasts for any city.', 'Showing a sample forecast.');
     }
   }
-  state.pending = false;
+  // Nothing to show yet (say, the very first city wasn't found): fall back to the sample.
+  if (!state.data) { state.data = sampleData(); state.live = false; }
   render();
-  document.querySelector('.wrap').classList.remove('loading');
+  document.querySelector('.wrap').classList.remove('loading', 'booting');
 }
 
 // ---------- Hourly strip: mouse wheel and drag scroll it sideways ----------
@@ -235,10 +235,9 @@ $('search-form').addEventListener('submit', e => {
 
 // ---------- Start ----------
 // Runs once every script file (globe.js, radar.js, alerts.js) has loaded.
-// Show sample data right away, then try for live data.
+// The page starts in a quiet "booting" state (see index.html) until the first forecast is ready.
 document.addEventListener('DOMContentLoaded', () => {
   setUnit(state.unit);
-  state.data = sampleData(); state.pending = true; render();
   let startCity = 'Lexington, Kentucky';
   try { startCity = localStorage.getItem('ks-city') || startCity; } catch (e) {}
   load(startCity);

@@ -144,6 +144,10 @@ section h2 { font-family: var(--font-display); font-weight: 500; font-size: 18px
 footer { font-size: 12px; color: var(--ink-soft); text-align: center; }
 footer a { color: inherit; }
 .loading { opacity: .55; transition: opacity .3s; }
+/* Before the first forecast arrives: only the header and a "Finding your forecast…" line show. */
+.wrap.booting { opacity: 1; }
+.booting .sky .when, .booting .now, .booting .message, .booting .facts,
+.booting > section, .booting > footer { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 /* ---- Radar map ---- */
 .radar { display: grid; gap: 0; padding: 0; overflow: hidden; }

@@ -49,7 +49,7 @@ images/earth.png  1024×512 equirectangular Earth texture for the globe
    `{ place, lat, lon, cc, current, hourly[24], daily[10] }`. `sampleData()` returns the same shape.
 3. The result goes into `state.data`, then `render()` redraws the whole page and hands the location to `globe`, `radar` and `alerts`.
 4. `render()` is idempotent and re-runs on unit changes. Alerts only refetch when location or live/sample status changes (`render.alertKey`).
-5. On startup the app renders sample data immediately (`state.pending = true`), then loads the saved or default city ("Lexington, Kentucky").
+5. On startup `.wrap` has the `booting` class, so only the header and a "Finding your forecast…" line show. `load()` fetches the saved or default city ("Lexington, Kentucky"), then removes `booting`. Sample data appears only as a fallback, when live data can't load or the first city isn't found.
 
 - `describe(code, isDay)` maps WMO weather codes to a group (`clear/partly/cloud/fog/rain/snow/storm`), a label, a sky theme, and a gentle message. `icon(code, isDay)` draws inline SVG for each group.
 - Radar: US locations (`cc === 'US'`) use NOAA NEXRAD via IEM (last 50 min, 5-min steps). Everywhere else uses RainViewer (maxNativeZoom 7). The basemap is OpenFreeMap through MapLibre, restyled when the theme changes.
