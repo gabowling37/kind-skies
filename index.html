@@ -27,6 +27,9 @@
         <input id="city" name="city" placeholder="Look up a city" autocomplete="off">
         <button type="submit">Go</button>
       </form>
+      <button class="locate" id="locate" type="button" aria-label="Use my location" title="Use my location">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4 4 10.6l6.6 2.8L13.4 20z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
       <div class="units" id="units" role="group" aria-label="Temperature units">
         <button id="unit-f" type="button" aria-pressed="true">°F</button>
         <button id="unit-c" type="button" aria-pressed="false">°C</button>
@@ -97,7 +100,7 @@
     </div>
   </section>
 
-  <footer>Forecasts from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Be gentle with yourself out there.</footer>
+  <footer>Forecasts from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a>. Place names for your location from <a href="https://www.bigdatacloud.com" target="_blank" rel="noopener">BigDataCloud</a>. Be gentle with yourself out there.</footer>
 </div>
 
 <!-- Libraries: maps (Leaflet + MapLibre) and 3D (Three.js) -->

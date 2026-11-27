@@ -95,6 +95,31 @@ async function forecast(place) {
   };
 }
 
+// Your own location, from the phone or browser. Only asked for when someone taps "Use my location".
+// Coordinates are rounded to about a kilometer: plenty for weather, and kinder to privacy.
+function locate() {
+  const fail = why => Object.assign(new Error('nolocation'), { why });
+  const lookUp = ' You can look up your city instead.';
+  return new Promise((resolve, reject) => {
+    if (!window.isSecureContext) return reject(fail('Your location can only be shared when Kind Skies is on a secure (https) website.' + lookUp));
+    if (!navigator.geolocation) return reject(fail('This browser can’t share your location.' + lookUp));
+    navigator.geolocation.getCurrentPosition(resolve, e => reject(fail(
+      e.code === 1 ? 'Kind Skies doesn’t have permission to see your location. That’s okay.' + lookUp + ' You can also allow location in your browser’s settings.'
+      : e.code === 3 ? 'Finding your location is taking a while. Try again in a moment, or look up your city instead.'
+      : 'Your location couldn’t be found just now.' + lookUp)),
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 10 * 60 * 1000 });
+  }).then(async pos => {
+    const lat = +pos.coords.latitude.toFixed(2), lon = +pos.coords.longitude.toFixed(2);
+    // A town name for the coordinates, from BigDataCloud's free, keyless lookup. It also tells us
+    // the country, which picks the radar and alerts. If it fails, the forecast still works.
+    try {
+      const j = await (await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en&latitude=' + lat + '&longitude=' + lon)).json();
+      const town = j.city || j.locality, area = j.principalSubdivision || j.countryName;
+      return { name: [town, area].filter(Boolean).join(', ') || 'Your location', lat, lon, cc: j.countryCode || null };
+    } catch (e) { return { name: 'Your location', lat, lon, cc: null }; }
+  });
+}
+
 // Sample data: a made-up autumn forecast, used when live data can't be reached.
 function sampleData() {
   const now = new Date(); now.setMinutes(0, 0, 0);
@@ -180,17 +205,35 @@ function showNotice(text, lead) {
   n.hidden = !text && !lead;
 }
 
+// Pass a city name, or HERE to use the phone's or browser's own location.
+const HERE = '@here', DEFAULT_CITY = 'Lexington, Kentucky';
 async function load(cityName) {
+  const here = cityName === HERE, btn = $('locate');
   document.querySelector('.wrap').classList.add('loading');
+  if (here) { btn.classList.add('busy'); btn.setAttribute('aria-busy', 'true'); }
   try {
-    const place = await geocode(cityName);
+    let place, note = '';
+    if (here) {
+      try { place = await locate(); }
+      catch (e) {
+        if (state.data || !e.why) throw e;
+        // Very first load and no location: carry on with the default city, and say why.
+        note = e.why; place = await geocode(DEFAULT_CITY);
+      }
+    } else place = await geocode(cityName);
     state.data = await forecast(place);
     state.live = true;
-    showNotice('');
-    try { localStorage.setItem('ks-city', cityName); } catch (e) {}
+    showNotice(note);
+    btn.classList.toggle('on', here && !note);
+    if (!note) try {
+      if (here) localStorage.setItem('ks-where', 'here');
+      else { localStorage.setItem('ks-city', cityName); localStorage.removeItem('ks-where'); }
+    } catch (e) {}
   } catch (err) {
     if (err.message === 'notfound') {
       showNotice(`We couldn't find “${cityName}”. Try adding the state or country, like “Dayton, Ohio”.`);
+    } else if (err.why) {
+      showNotice(err.why);   // location trouble: keep showing the forecast we already have
     } else {
       state.live = false;
       if (!state.data) state.data = sampleData();
@@ -201,6 +244,7 @@ async function load(cityName) {
   if (!state.data) { state.data = sampleData(); state.live = false; }
   render();
   document.querySelector('.wrap').classList.remove('loading', 'booting');
+  btn.classList.remove('busy'); btn.removeAttribute('aria-busy');
 }
 
 // ---------- Hourly strip: mouse wheel and drag scroll it sideways ----------
@@ -240,13 +284,19 @@ $('search-form').addEventListener('submit', e => {
   e.preventDefault();
   const v = $('city').value.trim(); if (v) load(v);
 });
+$('locate').addEventListener('click', () => { if (!$('locate').classList.contains('busy')) load(HERE); });
 
 // ---------- Start ----------
 // Runs once every script file (globe.js, radar.js, alerts.js) has loaded.
 // The page starts in a quiet "booting" state (see index.html) until the first forecast is ready.
-document.addEventListener('DOMContentLoaded', () => {
+// If someone chose "Use my location" before, start there, but only if the browser already allows it,
+// so a permission prompt never pops up before the page has loaded.
+document.addEventListener('DOMContentLoaded', async () => {
   setUnit(state.unit);
-  let startCity = 'Lexington, Kentucky';
-  try { startCity = localStorage.getItem('ks-city') || startCity; } catch (e) {}
+  let startCity = DEFAULT_CITY, wantsHere = false;
+  try { startCity = localStorage.getItem('ks-city') || startCity; wantsHere = localStorage.getItem('ks-where') === 'here'; } catch (e) {}
+  if (wantsHere) {
+    try { if ((await navigator.permissions.query({ name: 'geolocation' })).state === 'granted') startCity = HERE; } catch (e) {}
+  }
   load(startCity);
 });
