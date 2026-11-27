@@ -52,7 +52,7 @@ header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify
 .brand { font-family: var(--font-display); font-weight: 600; font-size: 22px; display: flex; align-items: center; gap: 8px; }
 .brand svg { width: 28px; height: 28px; }
 .controls { display: flex; gap: 8px; flex: 1 1 280px; justify-content: flex-end; }
-form.search { display: flex; flex: 1; max-width: 340px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 4px 4px 14px; }
+form.search { display: flex; flex: 1; min-width: 0; max-width: 340px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 4px 4px 14px; }
 form.search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; outline: none; }
 form.search button, .units button { font: inherit; font-weight: 600; border: 0; cursor: pointer; border-radius: 999px; }
 form.search button { background: var(--accent); color: #fff; padding: 6px 14px; }
@@ -64,6 +64,13 @@ form.search button { background: var(--accent); color: #fff; padding: 6px 14px; 
 .temp, .hour .v, .hour .w, .hour .g, .day .lo, .day .hi, .hilo, .facts b { transition: opacity .2s; }
 .swapping .temp, .swapping .hour .v, .swapping .hour .w, .swapping .hour .g, .swapping .day .lo, .swapping .day .hi, .swapping .hilo, .swapping .facts b { opacity: 0; }
 form.search button { white-space: nowrap; }
+.locate { flex: none; width: 36px; height: 36px; padding: 0; display: grid; place-items: center; align-self: center; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink-soft); cursor: pointer; transition: color .2s, background .2s; }
+.locate svg { width: 18px; height: 18px; }
+.locate:hover { color: var(--accent); }
+.locate.on { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.locate.busy svg { animation: locate-pulse .9s ease-in-out infinite alternate; }
+@keyframes locate-pulse { to { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .locate.busy svg { animation: none; opacity: .5; } }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 form.search:focus-within { border-color: var(--accent); }
 

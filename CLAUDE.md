@@ -16,7 +16,7 @@ Guidance for working in this repository.
   ```
 
 - When network calls fail (sandboxed previews, offline), the app falls back to `sampleData()` and an example alert, and shows a "Showing a sample forecast" notice. That notice means fetches failed. It does not mean the code is broken.
-- No API keys are needed. Every data source is free and keyless: Open-Meteo (geocoding and forecast), api.weather.gov (alerts), the Iowa Environmental Mesonet (NOAA NEXRAD radar tiles), RainViewer (world radar), and OpenFreeMap (basemap).
+- No API keys are needed. Every data source is free and keyless: Open-Meteo (geocoding and forecast), BigDataCloud (place name for "Use my location"), api.weather.gov (alerts), the Iowa Environmental Mesonet (NOAA NEXRAD radar tiles), RainViewer (world radar), and OpenFreeMap (basemap).
 
 ## Layout
 
@@ -45,11 +45,12 @@ images/earth.png  1024×512 equirectangular Earth texture for the globe
 ### Data flow (`js/app.js`)
 
 1. `load(city)` calls `geocode(name)`. `geocode` searches on the part before the comma, then prefers the result whose state or country matches the rest ("Dayton, Ohio").
+   `load(HERE)` (the "Use my location" button, `#locate`) calls `locate()` instead. `locate()` uses the browser's Geolocation API (HTTPS or localhost only), rounds the coordinates to 2 decimals (about 1 km), and asks BigDataCloud for a town name and country code. If that lookup fails, the place is "Your location" with an unknown `cc`, and alerts still check weather.gov. Location errors carry a friendly `why` message that is shown as a notice, and the current forecast stays.
 2. `forecast(place)` reshapes Open-Meteo's column arrays into one object:
    `{ place, lat, lon, cc, current, hourly[24], daily[10] }`. `sampleData()` returns the same shape.
 3. The result goes into `state.data`, then `render()` redraws the whole page and hands the location to `globe`, `radar` and `alerts`.
 4. `render()` is idempotent and re-runs on unit changes. Alerts only refetch when location or live/sample status changes (`render.alertKey`).
-5. On startup `.wrap` has the `booting` class, so only the header and a "Finding your forecast…" line show. `load()` fetches the saved or default city ("Lexington, Kentucky"), then removes `booting`. Sample data appears only as a fallback, when live data can't load or the first city isn't found.
+5. On startup `.wrap` has the `booting` class, so only the header and a "Finding your forecast…" line show. `load()` fetches the starting place, then removes `booting`. The starting place is your location if `ks-where` is `here` and the browser already grants location permission (startup never triggers a permission prompt); otherwise it is the saved city or `DEFAULT_CITY` ("Lexington, Kentucky"). Sample data appears only as a fallback, when live data can't load or the first city isn't found.
 
 - `describe(code, isDay)` maps WMO weather codes to a group (`clear/partly/cloud/fog/rain/snow/storm`), a label, a sky theme, and a gentle message. `icon(code, isDay)` draws inline SVG for each group.
 - Radar: US locations (`cc === 'US'`) use NOAA NEXRAD via IEM (last 50 min, 5-min steps). Everywhere else uses RainViewer (maxNativeZoom 7). The basemap is OpenFreeMap through MapLibre, restyled when the theme changes.
@@ -84,7 +85,7 @@ images/earth.png  1024×512 equirectangular Earth texture for the globe
 - Each file starts with a header comment saying what it does and that it is a plain script. Separate sections with banners such as `// ---------- Name ----------`.
 - Comments explain *why*, in the same friendly voice as the copy.
 - Keep values in metric internally (°C, km/h) and convert only for display with `deg()` and `wind()`. The F/C choice lives in `state.unit`.
-- `localStorage` keys use the `ks-` prefix (`ks-unit`, `ks-city`). Always wrap storage access in `try/catch`.
+- `localStorage` keys use the `ks-` prefix (`ks-unit`, `ks-city`, and `ks-where`, which is `here` when the last choice was "Use my location"). Always wrap storage access in `try/catch`.
 - DOM building:
   - `app.js` uses template strings with `innerHTML`, but only for numeric or internally authored values.
   - External text (NWS alert content, API strings) must go through `textContent`. `alerts.js` uses its `el(tag, cls, text)` helper for this. Don't put external or user text into `innerHTML`.

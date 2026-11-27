@@ -200,10 +200,12 @@ const alerts = (() => {
         description: 'Example text. Southwest winds 20 to 30 mph with gusts up to 45 mph.\n\nGusty winds could blow around unsecured objects.' }, 'care', { example: true }), helpRow(false));
       radar.setAlertShapes([]); return;
     }
-    if (cc !== 'US') { $('alerts-checked').textContent = ''; radar.setAlertShapes([]);
+    // An unknown country (the place-name lookup for "Use my location" failed) still gets checked:
+    // missing a real US warning would be worse than an unneeded check.
+    if (cc && cc !== 'US') { $('alerts-checked').textContent = ''; radar.setAlertShapes([]);
       list.replaceChildren(quiet('Official alerts are shown for US locations. For ' + place + ', check your national weather service.')); return; }
     const same = current && current.lat === lat && current.lon === lon;
-    current = { lat, lon, place };
+    current = { lat, lon, place: place.replace(/^Your location$/, 'your location') };   // reads well mid-sentence
     if (!same) list.replaceChildren(quiet('Checking for official alerts…'));
     check();
     refresh = setInterval(check, 5 * 60 * 1000);
